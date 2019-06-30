@@ -6,10 +6,7 @@ P.S. I know someone else has already implemented this same algorithm, since know
 NOTE:
 This algorithm gives a slightly weaker bound, since when it extends the rectangle of solved tiles it disallows any moves that temporarily break the rectangle.
 
-ex. In extending a 2x2 to a 3x3, moving rows 1 and 2 and columns 1 and 2 are not allowed.
-**-
-**-
----
+ex. In extending a 3x4 to a 4x4 (row amount first), moving rows 1 to 3 and columns 1 to 4 are not allowed.
 
 NOTE:
 This version of the algorithm uses a modified Lehmer code for storing ordered subsets of integers and stores it in a 64-bit integer. Do not extend the rectangle by too many tiles, or else the algorithm risks integer overflow.
