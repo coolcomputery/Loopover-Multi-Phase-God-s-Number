@@ -1,11 +1,19 @@
 import java.util.*;
 public class LoopoverUpper {
+    //modulo operator but fixed to be constrained in the range [0,k)
     private static int mod(int n, int k) {
         int out=n%k;
         if (out<0)
             out+=k;
         return out;
     }
+    /*
+    Describing a permutation of a subset of the pieces of an n x n board:
+    an array of pieces, where each piece is described by their locations in the board
+    if a piece is at row r, column c, it is given the number r*n+c, where r and c are both in the interval [0,n)
+    */
+    //rotating row r of a set of pieces by d units to the right
+    //negative d means shifting to the left
     public static void rmv(int[] locs, int r, int d, int n) {
         for (int i=0; i<locs.length; i++) {
             int rv=locs[i]/n;
@@ -13,6 +21,8 @@ public class LoopoverUpper {
                 locs[i]=rv*n+mod(locs[i]%n+d,n);
         }
     }
+    //rotating column c of a set of pieces by d units down
+    //negative d means shifting up
     public static void cmv(int[] locs, int c, int d, int n) {
         for (int i=0; i<locs.length; i++) {
             int cv=locs[i]%n;
@@ -20,6 +30,8 @@ public class LoopoverUpper {
                 locs[i]=mod(locs[i]/n+d,n)*n+cv;
         }
     }
+    //using modified Lehmer code to describe each set of pieces in an n x n board as a single number
+    //usually faster than using a String to concatenate each element together with a delimiter character
     public static long code(int[] perm, int n) {
         int[] help=perm.clone();
         long out=0;
@@ -32,9 +44,10 @@ public class LoopoverUpper {
         }
         return out;
     }
+    //the maximum number of moves it takes to extend an ra x ca solved block to a rb x cb block using the most efficient solving method
+    //basically a BFS starting from the rb x cb block and allowing all moves using rows ra to rb-1 and columns ca to cb-1
+    //does not allow any disturbance of the inner ra x ca block
     public static int maxmoves(int ra, int ca, int rb, int cb, int n) {
-        //calc max possible # moves to extend ra*ca block to rb*cb block under most efficient solve
-        //start with rb*cb block and bfs using all moves that do not affect the ra*ca block
         int[] id=new int[rb*cb-ra*ca];
         for (int r=0, i=0; r<rb; r++)
             for (int c=0; c<cb; c++)
@@ -88,6 +101,13 @@ public class LoopoverUpper {
         System.out.println(ra+"x"+ca+"->"+rb+"x"+cb+": "+out);
         return out;
     }
+    //upper bound of God's Number for n x n Loopover
+    //this is where the block extensions are determined
+    //currently it is 2x2->2x3->3x3->...->(n-1)x(n-1), which does not make the best possible bounds
+    /*
+    because at least one row and one column must be left free before extending the solved block to 
+    size n x n (solving the entire board), this algorithm is already slow at n=6
+    */
     public static int upper(int n) {
         ArrayList<int[]> rs=new ArrayList<>();
         rs.add(new int[] {2,2});
@@ -109,7 +129,7 @@ public class LoopoverUpper {
     }
     public static void main(String[] args) {
         long tst=System.currentTimeMillis();
-        System.out.println(upper(6));
+        System.out.println(upper(5));
         System.out.println(System.currentTimeMillis()-tst+" ms");
     }
 }
