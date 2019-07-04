@@ -58,14 +58,21 @@ public class LoopoverUpper {
         set[(int)(num/32)]|=(1<<(num%32));
     }
     //encoding and decoding byte6 (.n6) format
-    private static String byte6(long n, int bits) {
-        bits=(int)(6*Math.ceil(bits/6.0));
+    private static String byte6(long n) {
+        int bits=-1;
+        for (int len=64; len>0; len--)
+            if ((n&(1L<<(len-1)))!=0) {
+                bits = len;
+                break;
+            }
+        if (n==0)
+            bits=1;
         String out="";
         for (int i=0; i<bits; i+=6) {
             int amt=0;
             for (int j=0; j<6 && i+j<bits; j++) {
-                if ((n&(1<<(i+j)))>0)
-                    amt+=1<<j;
+                if ((n&(1L<<(i+j)))>0)
+                    amt+=1L<<j;
             }
             out=(char)(amt+63)+out;
         }
@@ -135,7 +142,7 @@ public class LoopoverUpper {
             }
             long code=code(id,n*n);
             add(perms,code);
-            writer.println(byte6(code,30));
+            writer.println(byte6(code));
             writer.close();
             out=0;
         }
@@ -181,7 +188,7 @@ public class LoopoverUpper {
                             long mvc=code(mv,n*n);
                             if (!contains(perms,mvc)) {
                                 add(perms,mvc);
-                                writer.print(byte6(mvc,30)+"\n");
+                                writer.print(byte6(mvc)+"\n");
                                 empty=false;
                             }
                         }
@@ -194,7 +201,7 @@ public class LoopoverUpper {
                             long mvc=code(mv,n*n);
                             if (!contains(perms,mvc)) {
                                 add(perms,mvc);
-                                writer.print(byte6(mvc,30)+"\n");
+                                writer.print(byte6(mvc)+"\n");
                                 empty=false;
                             }
                         }
@@ -261,7 +268,7 @@ public class LoopoverUpper {
                     }
                 }
                 amt++;
-                if (amt%500_000==0)
+                if (amt%1_000_000==0)
                     System.out.println(amt+"/"+locss.size());
             }
             locss=nlocss;
@@ -290,7 +297,7 @@ public class LoopoverUpper {
             deeps.add(code(locs,n*n));
         StringBuilder txt=new StringBuilder();
         for (long code:deeps)
-            txt.append(byte6(code,30)+"\n");
+            txt.append(byte6(code)+"\n");
         writer.println(txt);
         writer.close();
     }
@@ -327,7 +334,7 @@ public class LoopoverUpper {
     }
     public static void main(String[] args) {
         long tst=System.currentTimeMillis();
-        System.out.println("FINAL DEPTH="+maxmovesFolder(0,0,2,3,5));
+        System.out.println("FINAL DEPTH="+maxmovesFolder(0,0,3,3,4));
         System.out.println(System.currentTimeMillis()-tst+" ms");
     }
 }
