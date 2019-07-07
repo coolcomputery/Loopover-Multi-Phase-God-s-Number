@@ -23,12 +23,16 @@ public class LoopoverUpper {
                 locs[i]=mod(locs[i]/n+d,n)*n+cv;
         }
     }
+    //TODO: map locations to smaller numbers and do simple base n encoding for now
     //encoding and decoding Lehmer code
-    public static long code(int[] perm, int n) {
-        int[] help=perm.clone();
+    public static long code(int[] perm, int n, int ra, int ca) {
+        int[] help=new int[perm.length];
+        for (int i=0; i<perm.length; i++)
+            help[i]=locid(perm[i],n,ra,ca);
         long out=0;
+        int max=n*n;
         for (int i=0; i<help.length; i++) {
-            out*=n-i;
+            out*=max-i;
             out += help[i];
             for (int j=i+1; j<help.length; j++)
                 if (help[j]>help[i])
@@ -36,19 +40,47 @@ public class LoopoverUpper {
         }
         return out;
     }
-    private static int[] perm(long num, int n, int k) {
+    private static int[] perm(long num, int n, int ra, int ca, int k) {
         //let l[i] be lehmer code
         //num=(l[0]*(n-1)+l[1])*(n-2)+l[2])*...+l[k-1]
         int[] out=new int[k];
+        int max=n*n;
         for (int i=k-1; i>-1; i--) {
-            out[i]=(int)(num%(n-i));
-            num/=n-i;
+            out[i]=(int)(num%(max-i));
+            num/=max-i;
         }
         for (int i=k-1; i>-1; i--)
             for (int j=i+1; j<k; j++)
                 if (out[j]>=out[i])
                     out[j]++;
+        for (int i=0; i<out.length; i++)
+            out[i]=idloc(out[i],n,ra,ca);
         return out;
+    }
+    private static int locid(int loc, int n, int ra, int ca) {
+        /*
+        ex. n=4, ra=2, ca=2
+        **01
+        **23
+        4567
+        89ab (a=10, b=11)
+        */
+        int r=loc/n, c=loc%n;
+        assert(r>=ra || c>=ca);
+        int smallr=n-ca;
+        if (r<ra)
+            return r*smallr+(c-ca);
+        else
+            return (r-ra)*n+c+ra*smallr;
+    }
+    private static int idloc(int id, int n, int ra, int ca) {
+        int smallr=n-ca;
+        if (id<ra*smallr)
+            return (id/smallr)*n+(id%smallr+ca);
+        else {
+            id-=ra*smallr;
+            return (id/n+ra)*n+(id%n);
+        }
     }
     //implementing integer set with int array and bitmasking
     private static boolean contains(int[] set, long num) {
@@ -57,32 +89,21 @@ public class LoopoverUpper {
     private static void add(int[] set, long num) {
         set[(int)(num/32)]|=(1<<(num%32));
     }
-    //encoding and decoding byte6 (.n6) format
-    private static String byte6(long n) {
-        int bits=-1;
-        for (int len=64; len>0; len--)
-            if ((n&(1L<<(len-1)))!=0) {
-                bits = len;
-                break;
-            }
-        if (n==0)
-            bits=1;
+    //encoding and decoding base 95
+    private static String b95(long n) {
+        if (n==0) return " ";
         String out="";
-        for (int i=0; i<bits; i+=6) {
-            int amt=0;
-            for (int j=0; j<6 && i+j<bits; j++) {
-                if ((n&(1L<<(i+j)))>0)
-                    amt+=1L<<j;
-            }
-            out=(char)(amt+63)+out;
+        while (n>0) {
+            out=(char)(n%95+32)+out;
+            n/=95;
         }
         return out;
     }
-    private static long num(String byte6) {
+    private static long num(String b95) {
         long out=0;
-        for (int i=0; i<byte6.length(); i++) {
-            out<<=6;
-            out|=(int)(byte6.charAt(i))-63;
+        for (int i=0; i<b95.length(); i++) {
+            out*=95;
+            out+=b95.charAt(i)-32;
         }
         return out;
     }
@@ -91,14 +112,14 @@ public class LoopoverUpper {
         int[] maxperm=new int[rb*cb-ra*ca];
         for (int i=0; i<maxperm.length; i++)
             maxperm[i]=n*n-i-1;
-        long maxcode=code(maxperm,n*n);
+        long maxcode=code(maxperm,n,ra,ca);
         System.out.println("maxcode="+maxcode);
         int[] perms=new int[(int)(maxcode/32)+1];
         int out=0;
         for (int i=0; true; i++) {
             BufferedReader sc;
             try {
-                sc=new BufferedReader(new FileReader(folder+"\\"+i+".n6"));
+                sc=new BufferedReader(new FileReader(folder+"\\"+i+".txt"));
             }
             catch (Exception e) {
                 out=i-1;
@@ -117,9 +138,9 @@ public class LoopoverUpper {
                 }
                 if (line==null) break;
                 if (line.length()==0) continue;
-                add(perms,(int)num(line));
+                add(perms,num(line));
                 amt++;
-                if (amt%1_000_000==0)
+                if (amt%10_000_000==0)
                     System.out.println(amt);
             }
             System.out.println("fin="+amt);
@@ -134,22 +155,22 @@ public class LoopoverUpper {
                     }
             PrintWriter writer;
             try {
-                writer = new PrintWriter(new File(folder+"\\0.n6"));
+                writer = new PrintWriter(new File(folder+"\\0.txt"));
             }
             catch (Exception e) {
                 System.err.println(e);
                 return -1;
             }
-            long code=code(id,n*n);
+            long code=code(id,n,ra,ca);
             add(perms,code);
-            writer.println(byte6(code));
+            writer.println(b95(code));
             writer.close();
             out=0;
         }
         while (true) {
             BufferedReader sc;
             try {
-                sc=new BufferedReader(new FileReader(folder+"\\"+out+".n6"));
+                sc=new BufferedReader(new FileReader(folder+"\\"+out+".txt"));
             }
             catch (Exception e1) {
                 throw new RuntimeException(e1.toString());
@@ -159,7 +180,7 @@ public class LoopoverUpper {
             boolean empty=true;
             PrintWriter writer;
             try {
-                writer = new PrintWriter(new File(folder+"\\"+(out+1)+".n6"));
+                writer = new PrintWriter(new File(folder+"\\"+(out+1)+".txt"));
             }
             catch (Exception e) {
                 System.err.println(e);
@@ -177,7 +198,7 @@ public class LoopoverUpper {
                 }
                 if (line==null) break;
                 if (line.length()==0) continue;
-                int[] locs=perm(num(line), n * n, rb * cb - ra * ca);
+                int[] locs=perm(num(line), n, ra,ca,rb * cb - ra * ca);
                 HashSet<Integer> rows=new HashSet<>(), cols=new HashSet<>();
                 for (int loc:locs) {
                     int r=loc/n, c=loc%n;
@@ -185,10 +206,10 @@ public class LoopoverUpper {
                         for (int d=-1; d<=1; d+=2) {
                             int[] mv=locs.clone();
                             rmv(mv,r,d,n);
-                            long mvc=code(mv,n*n);
+                            long mvc=code(mv,n,ra,ca);
                             if (!contains(perms,mvc)) {
                                 add(perms,mvc);
-                                writer.print(byte6(mvc)+"\n");
+                                writer.print(b95(mvc)+"\n");
                                 empty=false;
                             }
                         }
@@ -198,10 +219,10 @@ public class LoopoverUpper {
                         for (int d=-1; d<=1; d+=2) {
                             int[] mv=locs.clone();
                             cmv(mv,c,d,n);
-                            long mvc=code(mv,n*n);
+                            long mvc=code(mv,n,ra,ca);
                             if (!contains(perms,mvc)) {
                                 add(perms,mvc);
-                                writer.print(byte6(mvc)+"\n");
+                                writer.print(b95(mvc)+"\n");
                                 empty=false;
                             }
                         }
@@ -209,7 +230,7 @@ public class LoopoverUpper {
                     }
                 }
                 amt++;
-                if (amt%500_000==0) {
+                if (amt%10_000_000==0) {
                     System.out.println(amt);
                 }
             }
@@ -220,93 +241,12 @@ public class LoopoverUpper {
         check(folder);
         return out;
     }
-    private static int maxmoves(int ra, int ca, int rb, int cb, int n) {
-        //calc max possible # moves to extend ra*ca block to rb*cb block under most efficient solve
-        //start with rb*cb block and bfs using all moves that do not affect the ra*ca block
-        int[] id=new int[rb*cb-ra*ca];
-        for (int r=0, i=0; r<rb; r++)
-            for (int c=0; c<cb; c++)
-                if (r>=ra || c>=ca) {
-                    id[i]=r*n+c;
-                    i++;
-                }
-        Set<Long> perms=new HashSet<>();
-        perms.add(code(id,n*n));
-        ArrayList<int[]> locss=new ArrayList<>();
-        locss.add(id);
-        to_n6(locss,"5x5\\" + ra + "x" + ca + "-" + rb + "x" + cb+"\\"+0+".n6",n);
-        int out=0;
-        while (true) {ArrayList<int[]> nlocss=new ArrayList<>();
-            int amt=0;
-            for (int[] locs:locss) {
-                HashSet<Integer> rows=new HashSet<>(), cols=new HashSet<>();
-                for (int loc:locs) {
-                    int r=loc/n, c=loc%n;
-                    if (!rows.contains(r) && r>=ra) {
-                        for (int d=-1; d<=1; d+=2) {
-                            int[] mv=locs.clone();
-                            rmv(mv,r,d,n);
-                            long mvc=code(mv,n*n);
-                            if (!perms.contains(mvc)) {
-                                perms.add(mvc);
-                                nlocss.add(mv);
-                            }
-                        }
-                        rows.add(r);
-                    }
-                    if (!cols.contains(c) && c>=ca) {
-                        for (int d=-1; d<=1; d+=2) {
-                            int[] mv=locs.clone();
-                            cmv(mv,c,d,n);
-                            long mvc=code(mv,n*n);
-                            if (!perms.contains(mvc)) {
-                                perms.add(mvc);
-                                nlocss.add(mv);
-                            }
-                        }
-                        cols.add(c);
-                    }
-                }
-                amt++;
-                if (amt%1_000_000==0)
-                    System.out.println(amt+"/"+locss.size());
-            }
-            locss=nlocss;
-            if (locss.size()>0) {
-                out++;
-                System.out.println(out+": "+locss.size());
-                to_n6(locss,"5x5\\" + ra + "x" + ca + "-" + rb + "x" + cb+"\\"+out+".n6",n);
-            }
-            else break;
-        }
-        System.out.println(ra+"x"+ca+"->"+rb+"x"+cb+": "+out);
-        System.out.println("tot="+perms.size());
-        return out;
-    }
-    private static void to_n6(ArrayList<int[]> locss, String file, int n) {
-        PrintWriter writer;
-        try {
-            writer = new PrintWriter(new File(file));
-        }
-        catch (Exception e) {
-            System.err.println(e);
-            return;
-        }
-        Set<Long> deeps=new HashSet<>();
-        for (int[] locs:locss)
-            deeps.add(code(locs,n*n));
-        StringBuilder txt=new StringBuilder();
-        for (long code:deeps)
-            txt.append(byte6(code)+"\n");
-        writer.println(txt);
-        writer.close();
-    }
     private static void check(String folder) {
         long tot=0;
         for (int i=0; true; i++) {
             BufferedReader sc;
             try {
-                sc=new BufferedReader(new FileReader(folder+"\\"+i+".n6"));
+                sc=new BufferedReader(new FileReader(folder+"\\"+i+".txt"));
             }
             catch (Exception e) {
                 break;
@@ -334,7 +274,7 @@ public class LoopoverUpper {
     }
     public static void main(String[] args) {
         long tst=System.currentTimeMillis();
-        System.out.println("FINAL DEPTH="+maxmovesFolder(0,0,3,3,4));
+        System.out.println("FINAL DEPTH="+maxmovesFolder(0,0,2,3,5));
         System.out.println(System.currentTimeMillis()-tst+" ms");
     }
 }
