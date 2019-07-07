@@ -25,12 +25,15 @@ public class LoopoverUpper {
     }
     //TODO: map locations to smaller numbers and do simple base n encoding for now
     //encoding and decoding Lehmer code
-    public static long code(int[] perm, int n, int ra, int ca) {
+    private static long code(int[] perm, int n, int ra, int ca) {
         int[] help=new int[perm.length];
-        for (int i=0; i<perm.length; i++)
+        int max=0;
+        for (int i=0; i<perm.length; i++) {
             help[i]=locid(perm[i],n,ra,ca);
+            max=Math.max(max,help[i]);
+        }
+        max++;
         long out=0;
-        int max=n*n;
         for (int i=0; i<help.length; i++) {
             out*=max-i;
             out += help[i];
@@ -40,11 +43,10 @@ public class LoopoverUpper {
         }
         return out;
     }
-    private static int[] perm(long num, int n, int ra, int ca, int k) {
+    private static int[] perm(long num, int n, int ra, int ca, int k, int max) {
         //let l[i] be lehmer code
         //num=(l[0]*(n-1)+l[1])*(n-2)+l[2])*...+l[k-1]
         int[] out=new int[k];
-        int max=n*n;
         for (int i=k-1; i>-1; i--) {
             out[i]=(int)(num%(max-i));
             num/=max-i;
@@ -73,6 +75,13 @@ public class LoopoverUpper {
         else
             return (r-ra)*n+c+ra*smallr;
     }
+    /*
+    ***01
+    ***23
+    45678
+    9abcd
+    efghi
+     */
     private static int idloc(int id, int n, int ra, int ca) {
         int smallr=n-ca;
         if (id<ra*smallr)
@@ -198,7 +207,7 @@ public class LoopoverUpper {
                 }
                 if (line==null) break;
                 if (line.length()==0) continue;
-                int[] locs=perm(num(line), n, ra,ca,rb * cb - ra * ca);
+                int[] locs=perm(num(line), n, ra,ca,rb * cb - ra * ca,n*n-ra*ca);
                 HashSet<Integer> rows=new HashSet<>(), cols=new HashSet<>();
                 for (int loc:locs) {
                     int r=loc/n, c=loc%n;
@@ -274,7 +283,7 @@ public class LoopoverUpper {
     }
     public static void main(String[] args) {
         long tst=System.currentTimeMillis();
-        System.out.println("FINAL DEPTH="+maxmovesFolder(0,0,2,3,5));
+        System.out.println("FINAL DEPTH="+maxmovesFolder(2,3,3,4,5));
         System.out.println(System.currentTimeMillis()-tst+" ms");
     }
 }
