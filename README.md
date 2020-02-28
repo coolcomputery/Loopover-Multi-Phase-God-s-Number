@@ -1,4 +1,6 @@
 # Loopover-Multi-Phase-God-s-Number
+**NOTE:** If you want a version that improves on this upper bound (but is restricted to having less memory and only using Java heap space), use https://github.com/coolcomputery/Loopover-Brute-Force-and-Improvement instead.
+
 Calculates upper bound of God's number of a n x n Loopover board by extending a rectangle of solved tiles incrementally.
 
 P.S. I know someone else has already implemented this same algorithm, since known upper bounds are at https://docs.google.com/spreadsheets/d/1gij270TVlA1sHmvvuyMXYKToGGpQKoBGbT2yYNwBe6I/edit#gid=0, but I couldn't find the code so I wrote my own version.
