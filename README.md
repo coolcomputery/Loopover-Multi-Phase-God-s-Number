@@ -1,5 +1,5 @@
 # Loopover-Multi-Phase-God-s-Number
-**NOTE:** If you want a version that improves on this upper bound (but is restricted to having less memory and only using Java heap space), use https://github.com/coolcomputery/Loopover-Brute-Force-and-Improvement instead.
+**OFFICIALLY DEPRECATED:** Use the LoopoverBFS class at https://github.com/coolcomputery/Loopover-Brute-Force-and-Improvement instead.
 
 Calculates upper bound of God's number of a n x n Loopover board by extending a rectangle of solved tiles incrementally.
 
